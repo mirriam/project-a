@@ -9,7 +9,7 @@ app = FastAPI(title="Hybrid GPT-Neo Chatbot")
 
 # Env vars
 HF_TOKEN = os.getenv("HF_TOKEN_2")
-DEFAULT_MODEL = os.getenv("MODEL_NAME", "EleutherAI/gpt-neo-2.7B")
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
