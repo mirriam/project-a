@@ -1,78 +1,89 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import os
+import requests
 import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from transformers import AutoTokenizer, AutoModelForCausalLM
-import gradio as gr
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
-# Initialize model and tokenizer
-device = torch.device("cpu")  # Hugging Face Spaces usually run on CPU unless GPU requested
-model_name = "google/flan-t5-large"
+app = FastAPI(title="Hybrid GPT-Neo Chatbot")
 
+# Env vars
+HF_TOKEN = os.getenv("HF_TOKEN_2")
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "google/flan-t5-large")
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Try loading local model once at startup
 try:
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    #model = AutoModelForCausalLM.from_pretrained(model_name)
-    model.eval()
+    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
+    model = AutoModelForSeq2SeqLM.from_pretrained(DEFAULT_MODEL)
+    #model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL)
     model.to(device)
+    model.eval()
+    local_model_loaded = True
 except Exception as e:
-    raise RuntimeError(f"Error loading model or tokenizer: {e}")
+    print(f"Local model loading failed: {e}")
+    local_model_loaded = False
 
-def generate_response(user_input, max_length=100):
+class GenerateRequest(BaseModel):
+    prompt: str
+    max_length: int = 100
+    model: str = None  # Optional override
+
+@app.post("/generate")
+def generate(req: GenerateRequest):
+    if not req.prompt:
+        raise HTTPException(status_code=400, detail="Prompt is required")
+
+    model_name = req.model or DEFAULT_MODEL
+
+    if local_model_loaded and model_name == DEFAULT_MODEL:
+        # Run local inference
+        try:
+            inputs = tokenizer(req.prompt, return_tensors="pt").to(device)
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=req.max_length,
+                do_sample=True,
+                top_p=0.95,
+                top_k=50,
+                temperature=0.9,
+                eos_token_id=tokenizer.eos_token_id,
+            )
+            generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            return {"result": generated_text}
+        except Exception as e:
+            # If local inference fails, fallback to API
+            print(f"Local inference failed: {e}")
+
+    # Fallback: call Hugging Face Inference API
+    headers = {}
+    if HF_TOKEN:
+        headers["Authorization"] = f"Bearer {HF_TOKEN}"
+
+    payload = {
+        "inputs": req.prompt,
+        "parameters": {"max_new_tokens": req.max_length},
+    }
+
     try:
-        # Create prompt with context
-        prompt = f"""
-You are a helpful assistant. Respond to the user's input in a conversational and friendly manner.
-
-User: {user_input}
-Assistant:
-"""
-        # Tokenize input
-        inputs = tokenizer(
-            prompt,
-            return_tensors="pt",
-            padding=True,
-            truncation=True,
-            max_length=512
+        response = requests.post(
+            f"https://api-inference.huggingface.co/models/{model_name}",
+            headers=headers,
+            json=payload,
+            timeout=30,
         )
-        inputs = inputs.to(device)
-        
-        # Generate response
-        outputs = model.generate(
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            max_length=max_length,
-            num_beams=5,
-            length_penalty=1.0,
-            early_stopping=True,
-            no_repeat_ngram_size=2
-        )
-        
-        # Decode response
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        return response.strip()
-    except Exception as e:
-        return f"Error generating response: {e}"
+        response.raise_for_status()
+        output = response.json()
 
-# Gradio UI
-with gr.Blocks() as demo:
-    gr.Markdown("# 💬 Flan-T5 Chatbot\nType a message and chat with the AI.")
-    chatbot = gr.Chatbot()
-    msg = gr.Textbox(label="Your message")
-    clear = gr.Button("Clear")
+        if isinstance(output, list) and isinstance(output[0], dict):
+            text = output[0].get("generated_text") or str(output[0])
+        elif isinstance(output, dict):
+            text = output.get("generated_text") or str(output)
+        else:
+            text = str(output)
 
-    def respond(message, chat_history):
-        bot_response = generate_response(message)
-        chat_history.append((message, bot_response))
-        return "", chat_history
-
-    msg.submit(respond, [msg, chatbot], [msg, chatbot])
-    clear.click(lambda: None, None, chatbot, queue=False)
-
-if __name__ == "__main__":
-    demo.launch()
-
-
-
-
-
-
-   
+        return {"result": text}
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"API call failed: {e}")
