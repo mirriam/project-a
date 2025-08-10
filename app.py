@@ -6,7 +6,7 @@ import requests
 app = FastAPI(title="Chatbot API")
 
 HF_TOKEN = os.getenv("HF_TOKEN_2")  # Use HF_TOKEN_2 as requested
-DEFAULT_MODEL = os.getenv("MODEL_NAME", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B")
 
 class GenerateRequest(BaseModel):
     prompt: str
