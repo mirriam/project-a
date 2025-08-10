@@ -7,7 +7,7 @@ app = FastAPI(title="Chatbot API")
 
 # Change here to match your environment variable name
 HF_TOKEN = os.getenv("HF_TOKEN_2")  
-DEFAULT_MODEL = os.getenv("MODEL_NAME", "facebook/bart-large-cnn")
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "mistralai/Mistral-7B-Instruct-v0.3")
 
 class GenerateRequest(BaseModel):
     prompt: str
