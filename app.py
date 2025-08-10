@@ -7,7 +7,7 @@ app = FastAPI(title="Chatbot API")
 
 # Use your HF_TOKEN_2 environment variable
 HF_TOKEN = os.getenv("HF_TOKEN_2")
-DEFAULT_MODEL = "google/flan-t5-large"
+DEFAULT_MODEL = "EleutherAI/gpt-neo-2.7B"
 
 class GenerateRequest(BaseModel):
     prompt: str
