@@ -5,8 +5,8 @@ import requests
 
 app = FastAPI(title="Chatbot API")
 
-HF_TOKEN = os.getenv("HF_TOKEN")  # Hugging Face token (optional)
-DEFAULT_MODEL = os.getenv("MODEL_NAME", "google/flan-t5-large")
+HF_TOKEN = os.getenv("HF_TOKEN_2")  # Use HF_TOKEN_2 as requested
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
 
 class GenerateRequest(BaseModel):
     prompt: str
@@ -22,6 +22,8 @@ def generate(req: GenerateRequest):
     headers = {}
     if HF_TOKEN:
         headers["Authorization"] = f"Bearer {HF_TOKEN}"
+    else:
+        raise HTTPException(status_code=401, detail="Hugging Face token missing")
 
     payload = {
         "inputs": req.prompt,
@@ -38,7 +40,8 @@ def generate(req: GenerateRequest):
         response.raise_for_status()
         output = response.json()
 
-        if isinstance(output, list) and isinstance(output[0], dict):
+        # Extract generated text from output
+        if isinstance(output, list) and len(output) > 0 and isinstance(output[0], dict):
             text = output[0].get("generated_text") or str(output[0])
         elif isinstance(output, dict):
             text = output.get("generated_text") or str(output)
