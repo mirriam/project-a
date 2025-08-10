@@ -7,7 +7,7 @@ app = FastAPI(title="Chatbot API")
 
 # Use your HF_TOKEN_2 environment variable
 HF_TOKEN = os.getenv("HF_TOKEN_2")
-DEFAULT_MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+DEFAULT_MODEL = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
 
 class GenerateRequest(BaseModel):
     prompt: str
