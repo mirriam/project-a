@@ -26,5 +26,4 @@ jobs:
       - name: Run FastAPI server
         env:
           HF_TOKEN_2: ${{ secrets.HF_TOKEN_2 }}
-        run: |
-          uvicorn main:app --host 0.0.0.0 --port 8000
+        
