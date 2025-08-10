@@ -4,19 +4,21 @@ import os
 import requests
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 app = FastAPI(title="Hybrid GPT-Neo Chatbot")
 
 # Env vars
 HF_TOKEN = os.getenv("HF_TOKEN_2")
-DEFAULT_MODEL = os.getenv("MODEL_NAME", "TinyLlama/TinyLlama-1.1B-Chat-v1.0")
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "google/flan-t5-large")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Try loading local model once at startup
 try:
     tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
-    model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL)
+    #model = AutoModelForCausalLM.from_pretrained(DEFAULT_MODEL)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
     model.to(device)
     model.eval()
     local_model_loaded = True
