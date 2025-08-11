@@ -7,7 +7,7 @@ app = FastAPI(title="Chatbot API")
 
 # Use your HF_TOKEN_2 environment variable
 HF_TOKEN = os.getenv("HF_TOKEN_2")
-DEFAULT_MODEL = "google/t5-large-lm-adapt"
+DEFAULT_MODEL = "facebook/bart-large-cnn"
 
 class GenerateRequest(BaseModel):
     prompt: str
