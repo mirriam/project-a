@@ -1,13 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import os
-import requests
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
 
 app = FastAPI(title="Chatbot API")
 
-# Use your HF_TOKEN_2 environment variable
-HF_TOKEN = os.getenv("HF_TOKEN_2")
-DEFAULT_MODEL = "facebook/bart-large-cnn"
+# Default model (can be overridden in request)
+DEFAULT_MODEL = "google/flan-t5-large"
+
+# Load default model at startup
+tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL)
+model = AutoModelForSeq2SeqLM.from_pretrained(DEFAULT_MODEL)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 
 class GenerateRequest(BaseModel):
     prompt: str
