@@ -10,7 +10,7 @@ HF_TOKEN = os.getenv("HF_TOKEN_2")
 if not HF_TOKEN:
     raise RuntimeError("Please set HF_TOKEN_2 environment variable with your Hugging Face API token")
 
-DEFAULT_MODEL = "HuggingFaceTB/SmolLM3-3B"
+DEFAULT_MODEL = "sshleifer/distilbart-cnn-12-6"
 
 class GenerateRequest(BaseModel):
     prompt: str
