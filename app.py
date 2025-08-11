@@ -10,7 +10,7 @@ HF_TOKEN = os.getenv("HF_TOKEN_2")
 if not HF_TOKEN:
     raise RuntimeError("Please set HF_TOKEN_2 environment variable with your Hugging Face API token")
 
-DEFAULT_MODEL = "Qwen/Qwen3-8B"
+DEFAULT_MODEL = "HuggingFaceTB/SmolLM3-3B"
 
 class GenerateRequest(BaseModel):
     prompt: str
